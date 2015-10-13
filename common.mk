@@ -3,7 +3,7 @@ CFLAGS=-pedantic -Wall -Wextra -g -std=c99 -fPIC
 LDFLAGS=-shared
 
 mostlyclean:
-	$(RM) $(OBJS) ../libmalloc.so ../tests/main.o
+	$(RM) $(OBJS) ../libmalloc.so ../main
 
 clean: mostlyclean
-	$(RM) ../libmalloc.so main.o
+	$(RM) ../libmalloc.so ../tests/main.o
