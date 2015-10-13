@@ -14,6 +14,11 @@ void *malloc(size_t size)
     return mptr;
 }
 
+void lol(void)
+{
+    return;
+}
+
 void free(void *ptr)
 {
     return;

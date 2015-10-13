@@ -3,7 +3,8 @@
 int main(void)
 {
     int *lol = malloc(sizeof (int));
+    lol();
     *lol = 3;
-    printf("lol: %d", 3);
+    printf("lol: %d", *lol);
     return 0;
 }
