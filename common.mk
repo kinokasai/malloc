@@ -1,9 +1,9 @@
 CC=gcc
-CFLAGS=-pedantic -Wall -Wextra -g -std=c99
-LDFLAGS=-shared -fPIC
+CFLAGS=-pedantic -Wall -Wextra -g -std=c99 -fPIC
+LDFLAGS=-shared
 
 mostlyclean:
-	$(RM) $(OBJS) gitcp
+	$(RM) $(OBJS) ../libmalloc.so
 
 clean: mostlyclean
-	$(RM) ../gitcp
+	$(RM) ../libmalloc.so
