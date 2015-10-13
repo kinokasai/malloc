@@ -5,8 +5,8 @@ all: libmalloc.so
 libmalloc.so: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o ../$@
 
-check: ../tests/main.o
-	$(CC) $(CFLAGS) ../tests/main.o -o main
-	./main
+check: libmalloc.so ../tests/main.o
+	$(CC) $(CFLAGS) -L.. -lmalloc ../tests/main.o -o ../main
+	LD_LIBRARY_PATH=.. ../main
 
 include ../common.mk
