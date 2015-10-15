@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../src/debug.h"
 #include <stdlib.h>
+#include <stdint.h>
 
 int main(void)
 {
@@ -12,5 +13,25 @@ int main(void)
     ptr = malloc(17);
     printf("lol: %d\n", *lol);
     printf("erm: %d\n", *erm);
+    ptr = malloc(6000);
+    int *iptr = (void *)((uintptr_t) ptr + 5034);
+    *iptr = 3;
+    printf("%d\n", *iptr);
+    ptr = malloc(6000);
+    iptr = (void *)((uintptr_t) ptr + 5034);
+    *iptr = 3;
+    printf("%d\n", *iptr);
+    ptr = malloc(6000);
+    iptr = (void *)((uintptr_t) ptr + 5034);
+    *iptr = 3;
+    printf("%d\n", *iptr);
+    ptr = malloc(6000);
+    iptr = (void *)((uintptr_t) ptr + 5034);
+    *iptr = 3;
+    printf("%d\n", *iptr);
+    ptr = malloc(6000);
+    iptr = (void *)((uintptr_t) ptr + 5034);
+    *iptr = 3;
+    printf("%d\n", *iptr);
     return 0;
 }
