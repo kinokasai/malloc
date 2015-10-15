@@ -1,11 +1,16 @@
 #include <stdio.h>
 #include "../src/debug.h"
+#include <stdlib.h>
 
 int main(void)
 {
     int *lol = malloc(sizeof (int));
-    void *erm = malloc(5123);
+    int *erm = malloc(sizeof (int));
     *lol = 3;
-    printf("lol: %d", *lol);
+    *erm = 4;
+    void *ptr = malloc(9);
+    ptr = malloc(17);
+    printf("lol: %d\n", *lol);
+    printf("erm: %d\n", *erm);
     return 0;
 }

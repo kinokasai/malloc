@@ -1,4 +1,4 @@
-OBJS=malloc.o
+OBJS=malloc.o blk.o
 
 all: libmalloc.so
 
