@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <limits.h>
 
+/* FIXME Add -Werror flag */
 
 static size_t bms(size_t size)
 {
@@ -26,6 +27,7 @@ static struct blk *init(size_t size)
     {
         info("MAP_FAILED!");
         errno = ENOMEM;
+        return NULL;
     }
     else
     {
@@ -33,7 +35,7 @@ static struct blk *init(size_t size)
         info("Memory mapped at %p", mptr);
     }
     struct blk *blk = mptr;
-    blk->state = 1;
+    blk->alc = 1;
     blk->size = bms(size);
     blk->next = NULL;
     /* Apparently, you should add +1 here. */
@@ -49,6 +51,11 @@ void *malloc(size_t size)
     if (!blk)
     {
         blk = init(size);
+        if (!blk)
+        {
+            return NULL;
+            info("Returning NULL");
+        }
         cblk = blk;
     }
     else

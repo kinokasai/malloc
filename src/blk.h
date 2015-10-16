@@ -4,7 +4,7 @@
 
 struct blk
 {
-    int state;
+    int alc;
     size_t size;
     struct blk *next;
     void *data;
