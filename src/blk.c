@@ -2,79 +2,69 @@
 #include "blk.h"
 #include "debug.h"
 #include <stdlib.h>
-#include <stdint.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <limits.h>
 #include <errno.h>
 
-static unsigned long align_page(size_t size)
+struct blk *create_blk(void *p, size_t size)
 {
-    unsigned long page_size = sysconf(_SC_PAGESIZE);
-    unsigned long tmp = page_size;
-    while (tmp < size + sizeof (struct blk))
-        tmp += page_size;
-    return tmp;
+    info("Creating new block at %p", p);
+    struct blk *blk = p;
+    blk->alc = 0;
+    blk->size = size;
+    blk->next = NULL;
+    blk->prev = NULL;
+    blk->data = (void *)((uintptr_t) p + sizeof (struct blk));
+    return blk;
 }
 
-static size_t bms(size_t size)
+struct blk *split_blk(struct blk *blk, size_t size)
 {
-    size_t blk_size = 0;
-    while (blk_size < size)
-        blk_size += sizeof (size_t);
-    return blk_size;
+    info("Splitting blk at %p to size %zu", (void *) blk, size);
+    if (size > blk->size)
+        warn("Trying to split block in a bigger size");
+    if (size + sizeof (struct blk) >= blk->size)
+        warn("This is going to underflow");
+    int fsize = blk->size - size - sizeof (struct blk);
+    blk->size = size;
+    void *ptr = (void *)((uintptr_t) blk + sizeof (struct blk) + blk->size);
+    struct blk *nblk = create_blk(ptr, fsize);
+    nblk->next = blk->next;
+    blk->next = nblk;
+    nblk->prev = blk;
+    return blk;
 }
 
-struct blk *find_next(struct blk *blk, size_t size)
+struct blk *next_blk(struct blk *blk, size_t size)
 {
-    while (blk->next && !(blk->alc == 0 && size > blk->size))
+    if (!blk)
+        warn("You shouldn't call next_blk with null");
+    while (blk->next)
     {
+        if (size < blk->size && !blk->alc)
+            return blk;
         blk = blk->next;
     }
-    return (blk->next == NULL && blk->size < size) ? NULL : blk;
+    return blk;
 }
 
-/* blk should be the end block of the list */
-struct blk *blk_pg(size_t size)
+static int merge_blk(struct blk *nblk, struct blk *oblk)
 {
-    size = align_page(size); 
-    void *mptr = mmap(NULL, size, PROT_READ | PROT_WRITE,
-                      MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if (mptr == MAP_FAILED)
-    {
-        info("MAP_FAILED!");
-        errno = ENOMEM;
-        return NULL;
-    }
-    else
-    {
-        info("Mapping %lu bytes of memory", size);
-        info("Memory mapped at %p", mptr);
-    }
-    struct blk *nblk = mptr;
-    nblk->alc = 1;
-    nblk->size = bms(size);
-    nblk->next = NULL;
-    mptr = (void *) ((uintptr_t) mptr + sizeof (struct blk));
-    nblk->data = mptr;
-    return nblk;
+    nblk->size += sizeof (struct blk) + oblk->size;
+    nblk->next = oblk->next;
+    return nblk->size;
 }
 
-/* size should be size_t aligned */
-struct blk *alloc(struct blk *blk, size_t size)
+/* Returns the size of the new free'd block */
+int free_blk(struct blk *blk)
 {
-    struct blk *tblk = find_next(blk, size);
-    if (!tblk)
-        tblk = blk_pg(size);
-    info("Pointer arithmetic");
-    void *ptr = tblk;
-    ptr = (void *) ((uintptr_t) ptr + sizeof (struct blk) + tblk->size);
-    struct blk *nblk = ptr;
-    nblk->alc = 1;
-    nblk->size = size;
-    nblk->next = NULL;
-    nblk->data = nblk + sizeof (struct blk);
-    tblk->next = nblk;
-    return nblk;
+    blk->alc = 0;
+    int size = blk->size;
+    if (blk->next && !blk->next->alc)
+        size = merge_blk(blk, blk->next);
+    if (blk->prev && !blk->prev->alc)
+        size = merge_blk(blk->prev, blk);
+    return size;
 }

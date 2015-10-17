@@ -7,10 +7,13 @@ struct blk
     int alc;
     size_t size;
     struct blk *next;
+    struct blk *prev;
     void *data;
 };
 
-struct blk *find_next(struct blk *blk, size_t size);
-struct blk *alloc(struct blk *blk, size_t size);
+struct blk *create_blk(void *p, size_t size);
+struct blk *split_blk(struct blk *blk, size_t size);
+struct blk *next_blk(struct blk *blk, size_t size);
+int free_blk(struct blk *blk);
 
 #endif /* BLK_H */

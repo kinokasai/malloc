@@ -6,4 +6,8 @@
     fprintf(stderr, "[INFO] (%s:%d) " M "\n", __FILE__, \
             __LINE__, ##__VA_ARGS__)
 
+#define warn(M, ...)                                                \
+    fprintf(stderr, "[WARN] (%s:%d) " M "\n", __FILE__,  \
+            __LINE__, ##__VA_ARGS__)
+
 #endif /* DEBUG_H */

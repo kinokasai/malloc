@@ -1,70 +1,81 @@
 #define _GNU_SOURCE
 #include "malloc.h"
 #include "errno.h"
+#include "page.h"
 #include "blk.h"
+#include "help.h"
 #include "debug.h"
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <limits.h>
+#include <string.h>
 
 /* FIXME Add -Werror flag */
 
-static size_t bms(size_t size)
+static struct page *get_page(struct page *page, int set)
 {
-    size_t blk_size = 0;
-    while (blk_size < size)
-        blk_size += sizeof (size_t);
-    return blk_size;
-}
-
-static struct blk *init(size_t size)
-{
-    unsigned long page_size = sysconf(_SC_PAGESIZE);
-    void *mptr = mmap(NULL, page_size, PROT_READ | PROT_WRITE,
-                      MAP_ANONYMOUS | MAP_SHARED, -1, 0);
-    if (mptr == MAP_FAILED)
-    {
-        info("MAP_FAILED!");
-        errno = ENOMEM;
-        return NULL;
-    }
-    else
-    {
-        info("Mapping %lu bytes of memory", page_size);
-        info("Memory mapped at %p", mptr);
-    }
-    struct blk *blk = mptr;
-    blk->alc = 1;
-    blk->size = bms(size);
-    blk->next = NULL;
-    /* Apparently, you should add +1 here. */
-    mptr = (void *) ((uintptr_t) mptr + sizeof (struct blk));
-    blk->data = mptr;
-    return blk;
+    static struct page *gpage = NULL;
+    if (set)
+        gpage = page;
+    return gpage;
 }
 
 void *malloc(size_t size)
 {
-    static struct blk *blk = NULL;
-    struct blk *cblk = NULL;
-    if (!blk)
+    info("malloc'ing %zu bytes", size);
+    size = word_align(size);
+    info("(%zu bytes word-aligned)", size);
+    if (size == 0)
+        return NULL;
+    //static struct page *page = NULL;
+    struct page *page = get_page(NULL, 0);
+    struct blk *blk = NULL;
+    if (!page)
+        page = get_page(create_page(size), 1);
+        //page = create_page(size);
+    blk = add_blk(page, size);
+    print_mem(page);
+    if (blk)
     {
-        blk = init(size);
-        if (!blk)
-        {
-            return NULL;
-            info("Returning NULL");
-        }
-        cblk = blk;
+        info("returning %p", blk->data);
+        return blk->data;
     }
     else
-        cblk = alloc(blk, bms(size));
-    info("Returning %lu bytes at %p", cblk->size, cblk->data);
-    return cblk->data;
+        return NULL;
+}
+
+void *calloc(size_t eltn, size_t elts)
+{
+    info("Calloc'ing %p");
+    /* FIXME Check for overflow */
+    void *ptr = malloc(eltn * elts);
+    memset(ptr, 0, eltn * elts);
+    return ptr;
+}
+
+void *realloc(void *ptr, size_t size)
+{
+    info("Realloc'ing %p", ptr);
+    if (!ptr)
+        return malloc(size);
+    if (!size)
+        free(ptr);
+    return ptr;
 }
 
 void free(void *ptr)
 {
-    return;
+    info("Free'ing %p", ptr);
+    if (!ptr)
+    {
+        info("lol it's null");
+        return;
+    }
+    struct page *page = get_page(NULL, 0);
+    if (!page)
+        return NULL;
+    free_blkp(&page, ptr);
+    print_mem(page);
+    get_page(page, 1);
 }
