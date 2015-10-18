@@ -20,7 +20,7 @@ size_t word_align(size_t size)
 
 void print_blk(struct blk *blk)
 {
-    if (blk->alc > 1)
+    if (blk->alc > 1 || blk->size > 100000000000)
         raise(SIGTRAP);
     fprintf(stderr, "- BLK -> %p\n", (void *) blk);
     fprintf(stderr, "  - alc'd: %d\n", blk->alc);

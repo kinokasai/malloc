@@ -16,5 +16,6 @@ struct page *create_page(size_t size);
 struct page *page_next(struct page *page, size_t size);
 struct blk *add_blk(struct page *page, size_t size);
 struct page *free_blkp(struct page *page, void *p);
+void update_page(struct page *page, void *p, size_t fsize);
 
 #endif /* PAGE_H */

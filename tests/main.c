@@ -6,13 +6,14 @@
 int main(void)
 {
     void *ptr;
+    int *lol;
     /* Several pages test */
-    /*int *lol = malloc(sizeof (int));
+    /*lol = malloc(sizeof (int));
     malloc(5000);
-    void *ptr = malloc(64);*/
+    ptr = malloc(64);*/
 
     /* Speed test */
-    malloc(5000);
+   /* malloc(5000);
     int i = 0;
     while (i < 100000)
     {
@@ -22,7 +23,7 @@ int main(void)
             free(ptr);
         ptr = malloc(64);
     }
-    free(ptr);
+    free(ptr);*/
 
     /* Calloc test */
     /*
@@ -33,11 +34,16 @@ int main(void)
     
     //free(erm);
 
-    /*printf("\n");
+    /* Realloc tests */
+    printf("\n");
     info("Now reallocating \n");
     
+    lol = malloc(sizeof (int));
     *lol = 3;
-    lol = realloc(lol, sizeof (int));
-    printf("lol: %d\n", *lol);*/
+    ptr = malloc(400);
+    int *erm = malloc(sizeof (int));
+    free(ptr);
+    lol = realloc(lol, sizeof (int) + 10);
+    printf("lol: %d\n", *lol);
     return 0;
 }

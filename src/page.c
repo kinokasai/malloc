@@ -13,14 +13,21 @@
 
 static struct page *find_page(struct page *page, void *p)
 {
-    void *page_end = (uintptr_t) page + page->size;
-    while (page && !(page_end >= p && page <= p))
+    void *page_end = (void *)((uintptr_t) page + page->size);
+    while (page && !(page_end >= p && (void *) page <= p))
     {
         page = page->next;
         if (page)
-            page_end = (uintptr_t) page + page->size;
+            page_end = (void *)((uintptr_t) page + page->size);
     }
     return page;
+}
+
+void update_page(struct page *page, void *p, size_t fsize)
+{
+    struct page *tpage = find_page(page, p);
+    if (tpage && tpage->free_size < fsize)
+        tpage->free_size = fsize;
 }
 
 /* Checks for the next page capable of containing size */
@@ -87,10 +94,6 @@ struct blk *add_blk(struct page *page, size_t size)
         npage->next = page;
         page->prev = npage;
         tpage = npage;
-        /*npage->next = tpage->next;
-        tpage->next = npage;
-        npage->prev = tpage;
-        tpage = npage;*/
     }
     struct blk *tblk = next_blk(tpage->fblk, size);
     tblk = split_blk(tblk, size);
@@ -107,23 +110,13 @@ struct blk *add_blk(struct page *page, size_t size)
 static struct blk *find_blk(struct page *page, void *p)
 {
     //info("Searching for block at data -> %p", p);
-    void *page_end = (uintptr_t) page + page->size;
-    /*while (page && !(page_end > p && page < p))
-    {
-        page = page->next;
-        if (page)
-            page_end = (uintptr_t) page + page->size;
-    }*/
+    //void *page_end = (uintptr_t) page + page->size;
     page = find_page(page, p);
     if (!page)
     {
         //info("Block not found");
         return NULL;
     }
-    /*if (!(page_end > p && page < p))
-        //info("Block not found in any of the pages");
-    else
-        //info("Block should be on page %p", page);*/
     struct blk *blk = page->fblk;
     while (blk && blk->data != p)
         blk = blk->next;

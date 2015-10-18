@@ -64,11 +64,6 @@ static int merge_blk(struct blk *nblk, struct blk *oblk)
     return nblk->size;
 }
 
-/* Resize if size is smaller */
-static resize_blk(struct blk *blk, size_t size)
-{
-}
-
 /* Returns the size of the new free'd block */
 int free_blk(struct blk *blk)
 {
