@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-pedantic -Wall -Wextra -g -std=c99 -fPIC
+CFLAGS=-pedantic -Wall -Wextra -Werror -g -std=c99 -fPIC
 LDFLAGS=-shared
 
 mostlyclean:

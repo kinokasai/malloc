@@ -5,6 +5,7 @@
 #include "help.h"
 #include <sys/mman.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdint.h>
 #include <limits.h>
 
