@@ -1,12 +1,10 @@
 #define _GNU_SOURCE
 #include "blk.h"
-#include "debug.h"
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <limits.h>
-#include <signal.h>
 #include <errno.h>
 
 struct blk *create_blk(void *p, size_t size)
@@ -21,10 +19,6 @@ struct blk *create_blk(void *p, size_t size)
 
 struct blk *split_blk(struct blk *blk, size_t size)
 {
-    if (size > blk->size)
-    {
-        raise(SIGTRAP);
-    }
     int fsize = blk->size - size;
     blk->size = size - sizeof (struct blk);
     void *ptr = (void *)((uintptr_t) blk + sizeof (struct blk) + blk->size);

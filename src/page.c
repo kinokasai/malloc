@@ -1,10 +1,8 @@
 #define _GNU_SOURCE
 #include "page.h"
-#include "debug.h"
 #include "help.h"
 #include "blk.h"
 #include <stdlib.h>
-#include <signal.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -86,7 +84,6 @@ struct page *create_page(size_t size)
                       MAP_ANONYMOUS | MAP_SHARED, -1, 0);
     if (mptr == MAP_FAILED)
     {
-        info("ENOMEM ENOMEM ENOMEM");
         errno = ENOMEM;
         return NULL;
     }
@@ -118,10 +115,6 @@ struct blk *add_blk(struct page *page, size_t size)
     struct blk *tblk = next_blk(tpage->fblk, size);
     tblk = split_blk(tblk, size);
     tblk->alc = 1;
-    if (size > tpage->free_size)
-    {
-        raise(SIGINT);
-    }
     tpage->free_size = get_free_size(tpage);
     return tblk;
 }
@@ -130,16 +123,12 @@ static struct blk *find_blk(struct page *page, void *p)
 {
     page = find_page(page, p);
     if (!page)
-    {
         return NULL;
-    }
     struct blk *blk = page->fblk;
     while (blk && blk + 1 != p)
         blk = blk->next;
     if (!blk || blk + 1 != p)
-    {
         return NULL;
-    }
     return (blk + 1 == p) ? blk : NULL;
 }
 

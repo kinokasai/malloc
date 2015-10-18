@@ -1,15 +1,12 @@
 #define _GNU_SOURCE
 #include "malloc.h"
-#include "errno.h"
 #include "page.h"
 #include "blk.h"
 #include "help.h"
-#include "debug.h"
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <limits.h>
-#include <string.h>
 
 /* FIXME Add -Werror flag */
 
