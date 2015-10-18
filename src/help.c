@@ -1,6 +1,7 @@
 #include "help.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <signal.h>
 #include <stdint.h>
 
 unsigned long page_align(size_t size)
@@ -17,24 +18,26 @@ size_t word_align(size_t size)
     return (size - 1) / tsize * tsize + tsize;
 }
 
-static void print_blk(struct blk *blk)
+void print_blk(struct blk *blk)
 {
-    printf("- BLK -> %p\n", (void *) blk);
-    printf("  - alc'd: %d\n", blk->alc);
-    printf("  - Size: %zu\n", blk->size);
-    printf("  - Next: %p\n", (void *) blk->next);
-    printf("  - Prev: %p\n", (void *) blk->prev);
-    printf("  - Data: %p\n", (void *) blk->data);
+    if (blk->alc > 1)
+        raise(SIGTRAP);
+    fprintf(stderr, "- BLK -> %p\n", (void *) blk);
+    fprintf(stderr, "  - alc'd: %d\n", blk->alc);
+    fprintf(stderr, "  - Size: %zu\n", blk->size);
+    fprintf(stderr, "  - Next: %p\n", (void *) blk->next);
+    fprintf(stderr, "  - Prev: %p\n", (void *) blk->prev);
+    fprintf(stderr, "  - Data: %p\n", (void *) blk->data);
 }
 
 static void print_page(struct page *page)
 {
-    printf("PAGE -> %p to %p\n", (void *) page,
+    fprintf(stderr, "PAGE -> %p to %p\n", (void *) page,
            (void *) ((uintptr_t) page + page->size));
-    printf("- Size: %zu\n", page->size);
-    printf("- Free size: %zu\n", page->free_size);
-    printf("- Next: %p\n", (void *) page->next);
-    printf("- Prev: %p\n", (void *) page->prev);
+    fprintf(stderr, "- Size: %zu\n", page->size);
+    fprintf(stderr, "- Free size: %zu\n", page->free_size);
+    fprintf(stderr, "- Next: %p\n", (void *) page->next);
+    fprintf(stderr, "- Prev: %p\n", (void *) page->prev);
     struct blk *blk = page->fblk;
     while (blk)
     {
@@ -46,7 +49,7 @@ static void print_page(struct page *page)
 void print_mem(struct page *page)
 {
     if (!page)
-        printf("No memory mapped\n");
+        fprintf(stderr, "No memory mapped\n");
     while (page)
     {
         print_page(page);

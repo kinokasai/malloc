@@ -23,22 +23,20 @@ static struct page *get_page(struct page *page, int set)
 
 void *malloc(size_t size)
 {
-    info("malloc'ing %zu bytes", size);
+    //info("malloc'ing %zu bytes", size);
     size = word_align(size);
-    info("(%zu bytes word-aligned)", size);
+    //info("(%zu bytes word-aligned)", size);
     if (size == 0)
         return NULL;
-    //static struct page *page = NULL;
     struct page *page = get_page(NULL, 0);
     struct blk *blk = NULL;
     if (!page)
         page = get_page(create_page(size), 1);
-        //page = create_page(size);
     blk = add_blk(page, size);
-    print_mem(page);
+    ////print_mem(page);
     if (blk)
     {
-        info("returning %p", blk->data);
+        //info("returning %p", blk->data);
         return blk->data;
     }
     else
@@ -47,35 +45,47 @@ void *malloc(size_t size)
 
 void *calloc(size_t eltn, size_t elts)
 {
-    info("Calloc'ing %p");
+    //info("Calloc'ing %zu elts of %zu bytes", eltn, elts);
     /* FIXME Check for overflow */
     void *ptr = malloc(eltn * elts);
     memset(ptr, 0, eltn * elts);
+    //info("Returning -> %p", ptr);
     return ptr;
 }
 
 void *realloc(void *ptr, size_t size)
 {
-    info("Realloc'ing %p", ptr);
+    //info("realloc'ing %p to size %zu", ptr, size);
     if (!ptr)
         return malloc(size);
     if (!size)
         free(ptr);
-    return ptr;
+    struct page *page = get_page(NULL, 0);
+    struct blk *blk = ptr - sizeof (struct blk);
+    //info("Which is");
+    //print_blk(blk);
+    void *nptr = malloc(size);
+    size_t ssize = (blk->size < size) ? blk->size : size;
+    //info("Copying %p -> %p for %zu bytes", ptr, nptr, ssize);
+    nptr = memcpy(nptr, ptr, ssize);
+    free_blkp(page, blk->data);
+    //print_mem(page);
+    //info("returning -> %p", nptr);
+    return nptr;
 }
 
 void free(void *ptr)
 {
-    info("Free'ing %p", ptr);
+    //info("Free'ing %p", ptr);
     if (!ptr)
     {
-        info("lol it's null");
+        //info("lol it's null");
         return;
     }
     struct page *page = get_page(NULL, 0);
     if (!page)
         return NULL;
-    free_blkp(&page, ptr);
-    print_mem(page);
+    page = free_blkp(page, ptr);
+    //print_mem(page);
     get_page(page, 1);
 }

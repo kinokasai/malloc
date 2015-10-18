@@ -5,37 +5,39 @@
 
 int main(void)
 {
-    int *lol = malloc(sizeof (int));
-    int *erm = malloc(sizeof (int));
-    unsigned int uint = -1;
+    void *ptr;
+    /* Several pages test */
+    /*int *lol = malloc(sizeof (int));
+    malloc(5000);
+    void *ptr = malloc(64);*/
+
+    /* Speed test */
+    malloc(5000);
+    int i = 0;
+    while (i < 100000)
+    {
+        i++;
+        info("malloc n°%d", i);
+        if (i%10 == 0)
+            free(ptr);
+        ptr = malloc(64);
+    }
+    free(ptr);
+
+    /* Calloc test */
+    /*
+    int *array = calloc(100, sizeof (int));
+    for (int i = 0; i < 100; i++)
+        printf("[%d]: %d\n", i, array[i]);
+        */
+    
+    //free(erm);
+
+    /*printf("\n");
+    info("Now reallocating \n");
+    
     *lol = 3;
-    *erm = 4;
-    void *ptr = malloc(9);
-    ptr = malloc(17);
-    info("Trying to malloc 4096 bytes");
-    ptr = malloc(4096);
-    printf("lol: %d\n", *lol);
-    printf("erm: %d\n", *erm);
-    ptr = malloc(6000);
-    int *iptr = (void *)((uintptr_t) ptr + 5034);
-    *iptr = 3;
-    printf("%d\n", *iptr);
-    ptr = malloc(6000);
-    iptr = (void *)((uintptr_t) ptr + 5034);
-    *iptr = 3;
-    printf("%d\n", *iptr);
-    ptr = malloc(6000);
-    iptr = (void *)((uintptr_t) ptr + 5034);
-    *iptr = 3;
-    printf("%d\n", *iptr);
-    ptr = malloc(6000);
-    iptr = (void *)((uintptr_t) ptr + 5034);
-    *iptr = 3;
-    printf("%d\n", *iptr);
-    ptr = malloc(6000);
-    iptr = (void *)((uintptr_t) ptr + 5034);
-    *iptr = 3;
-    printf("%d\n", *iptr);
-    iptr = malloc(uint);
+    lol = realloc(lol, sizeof (int));
+    printf("lol: %d\n", *lol);*/
     return 0;
 }
