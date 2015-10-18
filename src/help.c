@@ -27,7 +27,7 @@ void print_blk(struct blk *blk)
     fprintf(stderr, "  - Size: %zu\n", blk->size);
     fprintf(stderr, "  - Next: %p\n", (void *) blk->next);
     fprintf(stderr, "  - Prev: %p\n", (void *) blk->prev);
-    fprintf(stderr, "  - Data: %p\n", (void *) blk->data);
+    fprintf(stderr, "  - Data: %p\n", (void *) (blk + 1));
 }
 
 static void print_page(struct page *page)

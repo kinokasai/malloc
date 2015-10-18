@@ -11,6 +11,41 @@
 #include <limits.h>
 #include <errno.h>
 
+size_t get_free_size(struct page *page)
+{
+    struct blk *blk = page->fblk;
+    size_t max = 0;
+    while (blk)
+    {
+        if (!blk->alc && blk->size > max)
+            max = blk->size;
+        blk = blk->next;
+    }
+    return max;
+}
+
+static struct page *free_page(struct page *page, struct page *opage)
+{
+    //info("Free'ing page at -> %p", opage);
+    if (!opage)
+    {
+        //warn("OPAGE SHOULDN'T BE NULL");
+        return NULL;
+    }
+    if (opage->prev)
+        opage->prev->next = opage->next;
+    else
+    {
+        if (opage->next)
+            page = opage->next;
+        else
+            page = NULL;
+    }
+    //info("munmap'ing at page -> %p", opage);
+    munmap(opage, opage->size);
+    return page;
+}
+
 static struct page *find_page(struct page *page, void *p)
 {
     void *page_end = (void *)((uintptr_t) page + page->size);
@@ -23,18 +58,18 @@ static struct page *find_page(struct page *page, void *p)
     return page;
 }
 
-void update_page(struct page *page, void *p, size_t fsize)
+void update_page(struct page *page, struct page *tpage)
 {
-    struct page *tpage = find_page(page, p);
-    if (tpage && tpage->free_size < fsize)
-        tpage->free_size = fsize;
+    page->free_size = get_free_size(page);
+    size_t nfsize = tpage->free_size + sizeof (struct page);
+    if (tpage->size == nfsize)
+        page = free_page(page, tpage);
 }
 
 /* Checks for the next page capable of containing size */
 /* Size may need to be aligned */
 struct page *page_next(struct page *page, size_t size)
 {
-    size += sizeof (struct blk);
     if (!page)
     {
         //info("This shouldn't happen, I can't find any page");
@@ -80,14 +115,15 @@ struct page *create_page(size_t size)
 /* This should take the first page of the list */
 struct blk *add_blk(struct page *page, size_t size)
 {
+    size = size + sizeof (struct blk);
     struct page *tpage = page_next(page, size);
     //info("Trying to add a blk of size %zu to page of size %zu", size,
-            //tpage->free_size);
-    if (tpage->free_size < size + sizeof (struct blk))
+    //        tpage->free_size);
+    if (tpage->free_size <= size)
     {
         //info("Creating new page...");
         struct page *npage = create_page(size + sizeof (struct blk) * 2
-                                              + sizeof (struct page));
+                + sizeof (struct page));
         if (!npage)
             return NULL;
         /* We need to add in head */
@@ -98,12 +134,13 @@ struct blk *add_blk(struct page *page, size_t size)
     struct blk *tblk = next_blk(tpage->fblk, size);
     tblk = split_blk(tblk, size);
     tblk->alc = 1;
-    if (size + sizeof (struct blk) > tpage->free_size)
+    if (size > tpage->free_size)
     {
-        warn("UNDERFLOW");
+        //warn("UNDERFLOW");
         raise(SIGINT);
     }
-    tpage->free_size -= size + sizeof (struct blk);
+    //info("tblk -> %p", tblk);
+    tpage->free_size = get_free_size(tpage);
     return tblk;
 }
 
@@ -114,42 +151,20 @@ static struct blk *find_blk(struct page *page, void *p)
     page = find_page(page, p);
     if (!page)
     {
-        //info("Block not found");
+        //info("Page not found");
         return NULL;
     }
     struct blk *blk = page->fblk;
-    while (blk && blk->data != p)
+    while (blk && blk + 1 != p)
         blk = blk->next;
-    if (!blk || blk->data != p)
+    if (!blk || blk + 1 != p)
     {
         //info("Block not found\n");
         return NULL;
     }
     else
         //info("Block found at %p", blk);
-    return (blk->data == p) ? blk : NULL;
-}
-
-static struct page *free_page(struct page *page, struct page *opage)
-{
-    //info("Free'ing page at -> %p", opage);
-    if (!opage)
-    {
-        warn("OPAGE SHOULDN'T BE NULL");
-        return NULL;
-    }
-    if (opage->prev)
-        opage->prev->next = opage->next;
-    else
-    {
-        if (opage->next)
-            page = opage->next;
-        else
-            page = NULL;
-    }
-    //info("munmap'ing at page -> %p", opage);
-    munmap(opage, opage->size);
-    return page;
+    return (blk + 1 == p) ? blk : NULL;
 }
 
 struct page *free_blkp(struct page *page, void *p)
@@ -162,8 +177,7 @@ struct page *free_blkp(struct page *page, void *p)
     size_t bsize = free_blk(blk);
     if (tpage->free_size < bsize)
         tpage->free_size = bsize;
-    size_t nfsize = tpage->free_size + sizeof (struct blk) 
-                                     + sizeof (struct page);
+    size_t nfsize = tpage->free_size + sizeof (struct page);
     if (tpage->size == nfsize)
         page = free_page(page, tpage);
     return page;

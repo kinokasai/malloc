@@ -36,8 +36,8 @@ void *malloc(size_t size)
     //print_mem(page);
     if (blk)
     {
-        //info("returning %p", blk->data);
-        return blk->data;
+        //info("returning %p", blk + 1);
+        return blk + 1;
     }
     else
         return NULL;
@@ -53,14 +53,14 @@ void *calloc(size_t eltn, size_t elts)
     return ptr;
 }
 
-static void *extend(struct page *page, struct blk *blk, size_t size)
+static void *extend(struct page *page, struct blk *blk,
+                    size_t size)
 {
     /* This should always be positive */
     size_t dif = size - blk->size;
     struct blk *fblk = blk->next;
     size_t fsize = fblk->size - dif;
     struct blk *next = fblk->next;
-    void *data = (void *) ((uintptr_t)fblk->data + dif);
 
     blk->next = (void *) ((uintptr_t)fblk + dif);
     blk->size = size;
@@ -68,11 +68,11 @@ static void *extend(struct page *page, struct blk *blk, size_t size)
     blk->next->size = fsize;
     blk->next->next = next;
     blk->next->prev = blk;
-    blk->next->data = data;
     fblk = blk->next;
-    update_page(page, fblk, fblk->size);
+    if (page)
+        update_page(page, page);
     //info("now blk->size %zu", blk->size);
-    return blk->data;
+    return blk + 1;
 }
 
 void *move(struct page *page, void *ptr, struct blk *blk, size_t size)
@@ -82,7 +82,7 @@ void *move(struct page *page, void *ptr, struct blk *blk, size_t size)
     size_t ssize = (blk->size < size) ? blk->size : size;
     //info("Copying %p -> %p for %zu bytes", ptr, nptr, ssize);
     nptr = memcpy(nptr, ptr, ssize);
-    free_blkp(page, blk->data);
+    free_blkp(page, blk + 1);
     //print_mem(page);
     //info("returning -> %p", nptr);
     return nptr;
@@ -98,6 +98,8 @@ void *realloc(void *ptr, size_t size)
     if (!size)
         free(ptr);
     struct page *page = get_page(NULL, 0);
+    if (!page)
+        page = get_page(create_page(size), 1);
     struct blk *blk = (void *)((uintptr_t) ptr - sizeof (struct blk));
     //info("Which is");
     //print_blk(blk);
@@ -118,6 +120,7 @@ void *realloc(void *ptr, size_t size)
         }
     }
     //print_mem(page);
+    page = get_page(page, 1);
     return nptr;
 }
 

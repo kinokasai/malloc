@@ -8,7 +8,6 @@ struct blk
     size_t size;
     struct blk *next;
     struct blk *prev;
-    void *data;
 };
 
 struct blk *create_blk(void *p, size_t size);

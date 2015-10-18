@@ -17,8 +17,8 @@ struct blk *create_blk(void *p, size_t size)
     blk->size = size;
     blk->next = NULL;
     blk->prev = NULL;
-    blk->data = (void *)((uintptr_t) p + sizeof (struct blk));
-    //info("blk data -> %p", blk->data);
+    /*FIXME*/
+    //info("blk data -> %p", blk + 1);
     return blk;
 }
 
@@ -26,20 +26,18 @@ struct blk *split_blk(struct blk *blk, size_t size)
 {
     //info("Splitting blk at %p to size %zu", (void *) blk, size);
     if (size > blk->size)
-        warn("Trying to split block in a bigger size");
-    if (size + sizeof (struct blk) > blk->size)
     {
         warn("This is going to underflow");
         raise(SIGTRAP);
     }
-    int fsize = blk->size - size - sizeof (struct blk);
-    blk->size = size;
+    int fsize = blk->size - size;
+    blk->size = size - sizeof (struct blk);
     void *ptr = (void *)((uintptr_t) blk + sizeof (struct blk) + blk->size);
     struct blk *nblk = create_blk(ptr, fsize);
     nblk->next = blk->next;
     blk->next = nblk;
     nblk->prev = blk;
-    //info("Returning nblk -> %p with data -> %p", nblk, nblk->data);
+    //info("Returning nblk -> %p with data -> %p", nblk, nblk + 1);
     //info("nblk->next -> %p", nblk->next);
     return blk;
 }
@@ -48,9 +46,9 @@ struct blk *next_blk(struct blk *blk, size_t size)
 {
     if (!blk)
         warn("You shouldn't call next_blk with null");
-    while (blk->next)
+    while (blk)
     {
-        if (size + sizeof (struct blk) < blk->size && !blk->alc)
+        if (size < blk->size && !blk->alc)
             return blk;
         blk = blk->next;
     }
@@ -60,6 +58,8 @@ struct blk *next_blk(struct blk *blk, size_t size)
 static int merge_blk(struct blk *nblk, struct blk *oblk)
 {
     nblk->size += sizeof (struct blk) + oblk->size;
+    if (oblk->next)
+        oblk->next->prev = nblk;
     nblk->next = oblk->next;
     return nblk->size;
 }
