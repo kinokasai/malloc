@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../src/debug.h"
 #include <stdlib.h>
+#include <signal.h>
 #include <stdint.h>
 
 int main(void)
@@ -9,12 +10,11 @@ int main(void)
     int *lol;
     int i;
     /* Several pages test */
-    lol = malloc(sizeof (int));
-    int *lo = malloc(sizeof (int));
-    int *erm = malloc(sizeof (int));
-    free(lo);
+    ptr = malloc(3000);
+    ptr = malloc(2000);
+    ptr = malloc(64);
+    lol = malloc(8);
     free(lol);
-    free(erm);
    /* ptr = malloc(5000);
     free(ptr);
     ptr = malloc(64);
@@ -28,11 +28,13 @@ int main(void)
     // Speed test
     malloc(5000);
     i = 0;
-    while (i < 100000)
+    while (i < 1000000)
     {
         i++;
         if (i%10 == 0)
             free(ptr);
+        if (i == 703000)
+            raise(SIGTRAP);
         info("malloc n°%d", i);
         ptr = malloc(64);
     }

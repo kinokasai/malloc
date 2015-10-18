@@ -26,10 +26,8 @@ size_t get_free_size(struct page *page)
 
 static struct page *free_page(struct page *page, struct page *opage)
 {
-    //info("Free'ing page at -> %p", opage);
     if (!opage)
     {
-        //warn("OPAGE SHOULDN'T BE NULL");
         return NULL;
     }
     if (opage->prev)
@@ -41,7 +39,6 @@ static struct page *free_page(struct page *page, struct page *opage)
         else
             page = NULL;
     }
-    //info("munmap'ing at page -> %p", opage);
     munmap(opage, opage->size);
     return page;
 }
@@ -67,12 +64,10 @@ void update_page(struct page *page, struct page *tpage)
 }
 
 /* Checks for the next page capable of containing size */
-/* Size may need to be aligned */
 struct page *page_next(struct page *page, size_t size)
 {
     if (!page)
     {
-        //info("This shouldn't happen, I can't find any page");
         return NULL;
     }
     while (page->next)
@@ -86,20 +81,14 @@ struct page *page_next(struct page *page, size_t size)
 
 struct page *create_page(size_t size)
 {
-    //info("Trying to mmap page of %zu bytes", size);
     unsigned long page_size = page_align(size);
     void *mptr = mmap(NULL, page_size, PROT_READ | PROT_WRITE,
                       MAP_ANONYMOUS | MAP_SHARED, -1, 0);
     if (mptr == MAP_FAILED)
     {
-        //info("MAP_FAILED!");
+        info("ENOMEM ENOMEM ENOMEM");
         errno = ENOMEM;
         return NULL;
-    }
-    else
-    {
-        //info("Mapping %lu bytes of memory", page_size);
-        //info("Memory mapped at %p", mptr);
     }
     struct page (*page) = mptr;
     page->next = NULL;
@@ -108,7 +97,6 @@ struct page *create_page(size_t size)
     page->free_size = page_size - sizeof (struct page) - sizeof (struct blk);
     void *ptr = (void *) ((uintptr_t) page + sizeof (struct page));
     page->fblk = create_blk(ptr, page->free_size);
-    //info("Returning page at %p of size %zu", page, page->size);
     return page;
 }
 
@@ -117,16 +105,12 @@ struct blk *add_blk(struct page *page, size_t size)
 {
     size = size + sizeof (struct blk);
     struct page *tpage = page_next(page, size);
-    //info("Trying to add a blk of size %zu to page of size %zu", size,
-    //        tpage->free_size);
     if (tpage->free_size <= size)
     {
-        //info("Creating new page...");
         struct page *npage = create_page(size + sizeof (struct blk) * 2
                 + sizeof (struct page));
         if (!npage)
             return NULL;
-        /* We need to add in head */
         npage->next = page;
         page->prev = npage;
         tpage = npage;
@@ -136,22 +120,17 @@ struct blk *add_blk(struct page *page, size_t size)
     tblk->alc = 1;
     if (size > tpage->free_size)
     {
-        //warn("UNDERFLOW");
         raise(SIGINT);
     }
-    //info("tblk -> %p", tblk);
     tpage->free_size = get_free_size(tpage);
     return tblk;
 }
 
 static struct blk *find_blk(struct page *page, void *p)
 {
-    //info("Searching for block at data -> %p", p);
-    //void *page_end = (uintptr_t) page + page->size;
     page = find_page(page, p);
     if (!page)
     {
-        //info("Page not found");
         return NULL;
     }
     struct blk *blk = page->fblk;
@@ -159,11 +138,8 @@ static struct blk *find_blk(struct page *page, void *p)
         blk = blk->next;
     if (!blk || blk + 1 != p)
     {
-        //info("Block not found\n");
         return NULL;
     }
-    else
-        //info("Block found at %p", blk);
     return (blk + 1 == p) ? blk : NULL;
 }
 

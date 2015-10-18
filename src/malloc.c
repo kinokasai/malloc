@@ -21,11 +21,16 @@ static struct page *get_page(struct page *page, int set)
     return gpage;
 }
 
+static void update_gpage(struct page *page)
+{
+    while (page->prev)
+        page = page->prev;
+    get_page(page, 1);
+}
+
 void *malloc(size_t size)
 {
-    info("malloc'ing %zu bytes", size);
     size = word_align(size);
-    //info("(%zu bytes word-aligned)", size);
     if (size == 0)
         return NULL;
     struct page *page = get_page(NULL, 0);
@@ -33,10 +38,9 @@ void *malloc(size_t size)
     if (!page)
         page = get_page(create_page(size), 1);
     blk = add_blk(page, size);
-    //print_mem(page);
+    update_gpage(page);
     if (blk)
     {
-        //info("returning %p", blk + 1);
         return blk + 1;
     }
     else
@@ -45,18 +49,13 @@ void *malloc(size_t size)
 
 void *calloc(size_t eltn, size_t elts)
 {
-    info("Calloc'ing %zu elts of %zu bytes", eltn, elts);
-    /* FIXME Check for overflow */
     void *ptr = malloc(eltn * elts);
     memset(ptr, 0, eltn * elts);
-    //info("Returning -> %p", ptr);
     return ptr;
 }
 
-static void *extend(struct page *page, struct blk *blk,
-                    size_t size)
+static void *extend(struct page *page, struct blk *blk, size_t size)
 {
-    /* This should always be positive */
     size_t dif = size - blk->size;
     struct blk *fblk = blk->next;
     size_t fsize = fblk->size - dif;
@@ -71,28 +70,21 @@ static void *extend(struct page *page, struct blk *blk,
     fblk = blk->next;
     if (page)
         update_page(page, page);
-    //info("now blk->size %zu", blk->size);
     return blk + 1;
 }
 
 void *move(struct page *page, void *ptr, struct blk *blk, size_t size)
 {
-    //info("We can't extend");
     void *nptr = malloc(size);
     size_t ssize = (blk->size < size) ? blk->size : size;
-    //info("Copying %p -> %p for %zu bytes", ptr, nptr, ssize);
     nptr = memcpy(nptr, ptr, ssize);
     free_blkp(page, blk + 1);
-    //print_mem(page);
-    //info("returning -> %p", nptr);
     return nptr;
 }
 
 void *realloc(void *ptr, size_t size)
 {
-    info("realloc'ing %p to size %zu", ptr, size);
     size = word_align(size);
-    //info("(%zu bytes word-aligned)", size);
     if (!ptr)
         return malloc(size);
     if (!size)
@@ -101,17 +93,11 @@ void *realloc(void *ptr, size_t size)
     if (!page)
         page = get_page(create_page(size), 1);
     struct blk *blk = (void *)((uintptr_t) ptr - sizeof (struct blk));
-    //info("Which is");
-    //print_blk(blk);
     void *nptr = ptr;
-    /* if size < */
-
     if (blk->size < size)
     {
-        //info("We want it bigger");
         if (blk->next && !blk->next->alc && blk->next->size + blk->size > size)
         {
-            //info("We can extend");
             nptr = extend(page, blk, size);
         }
         else
@@ -119,23 +105,17 @@ void *realloc(void *ptr, size_t size)
             nptr = move(page, ptr, blk, size);
         }
     }
-    //print_mem(page);
     page = get_page(page, 1);
     return nptr;
 }
 
 void free(void *ptr)
 {
-    info("Free'ing %p", ptr);
     if (!ptr)
-    {
-        //info("lol it's null");
         return;
-    }
     struct page *page = get_page(NULL, 0);
     if (!page)
         return NULL;
     page = free_blkp(page, ptr);
-    //print_mem(page);
     get_page(page, 1);
 }
